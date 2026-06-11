@@ -3,90 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>時間長知覚 予備実験1 (オンライン版)</title>
+    <title>時間長知覚 予備実験1</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #f5f5f7;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             color: #333;
-        }
-        #screen {
-            width: 600px;
-            height: 400px;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
             padding: 20px;
             box-sizing: border-box;
         }
+        #screen {
+            width: 100%;
+            max-width: 640px;
+            min-height: 450px;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        /* 刺激（黒い円） */
         #stimulus {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             background-color: #000000;
             border-radius: 50%;
             display: none;
+        }
+        /* テキスト・案内文表示 */
+        .text-container {
+            font-size: 18px;
+            line-height: 1.7;
+            text-align: left;
+            width: 100%;
+            margin-bottom: 20px;
         }
         #text-display {
             font-size: 24px;
             font-weight: bold;
             text-align: center;
-            line-height: 1.5;
+            width: 100%;
+            word-break: break-all;
         }
-        #button-container {
-            display: none;
-            gap: 20px;
+        /* ボタン・コンテナ */
+        .btn-container {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
         }
         button {
-            padding: 12px 24px;
-            font-size: 18px;
+            padding: 14px 28px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             background-color: #0071e3;
             color: white;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
         button:hover {
             background-color: #005bb5;
+        }
+        button:active {
+            transform: scale(0.98);
         }
         /* フォームのスタイル */
         .form-group {
             margin-bottom: 20px;
             width: 100%;
-            max-width: 300px;
+            max-width: 320px;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
         .form-group label {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
         }
         .form-group select, .form-group input {
-            padding: 10px;
+            padding: 12px;
             font-size: 16px;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        /* キーボード案内の薄い文字 */
+        .key-hint {
+            display: block;
+            font-size: 12px;
+            font-weight: normal;
+            color: #eaeaea;
+            margin-top: 4px;
+        }
+        @media (max-width: 480px) {
+            #screen { padding: 20px; min-height: 400px; }
+            .btn-container { flex-direction: column; width: 100%; }
+            button { width: 100%; }
+            .key-hint { display: none; } /* スマホではキー案内を隠す */
         }
     </style>
 </head>
 <body>
 
 <div id="screen">
-    <div id="profile-form" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-        <h2>実験を始める前に</h2>
+    <div id="step-profile" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+        <h2 style="margin-top:0;">実験を始める前に</h2>
         <div class="form-group">
             <label for="gender">性別</label>
             <select id="gender" required>
@@ -100,14 +136,35 @@
             <label for="age">年齢</label>
             <input type="number" id="age" min="0" max="120" placeholder="半角数字で入力" required>
         </div>
-        <button id="start-btn" onclick="validateAndStart()">実験を開始する</button>
+        <button onclick="goToInstruction()">次へ進む</button>
+    </div>
+
+    <div id="step-instruction" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+        <h2 style="margin-top:0;">実験の説明</h2>
+        <div class="text-container">
+            <p>この実験では、画面に表示される「黒い円」の提示時間が、<strong>基準となる3秒間よりも【長い】か【短い】か</strong>を判定していただきます。</p>
+            <p><strong>【手順】</strong><br>
+            1. 「実験を開始する」を押すと、3秒のカウントダウンが始まります。<br>
+            2. カウントの後に、画面に黒い円が数秒間表示されます。<br>
+            3. 円が消えたら、3秒より長かったか短かったかを選択してください。</p>
+            <p id="pc-instruction" style="background:#f5f5f7; padding:12px; border-radius:8px; font-size:15px; font-weight:bold;">
+                💻 PCでご参加の方：<br>画面のボタンをクリックするか、キーボードの <span style="color:#0071e3;">[A]（短かった）</span> または <span style="color:#0071e3;">[D]（長かった）</span> を押しても回答できます。
+            </p>
+        </div>
+        <button onclick="startExperiment()">理解しました（実験を開始）</button>
     </div>
     
     <div id="text-display" style="display: none;"></div>
     <div id="stimulus"></div>
-    <div id="button-container">
-        <button onclick="recordResponse('short')">3秒より短かった</button>
-        <button onclick="recordResponse('long')">3秒より長かった</button>
+    <div id="button-container" class="btn-container" style="display: none;">
+        <button id="btn-short" onclick="recordResponse('short')">
+            3秒より短かった
+            <span class="key-hint">[A] キー</span>
+        </button>
+        <button id="btn-long" onclick="recordResponse('long')">
+            3秒より長かった
+            <span class="key-hint">[D] キー</span>
+        </button>
     </div>
 </div>
 
@@ -125,27 +182,34 @@
     let results = [];
     let userGender = "";
     let userAge = "";
+    let userDevice = "PC";
+    let isWaitingForResponse = false; // 回答待ちフラグ（キー連打対策）
 
-    const profileForm = document.getElementById('profile-form');
+    const stepProfile = document.getElementById('step-profile');
+    const stepInstruction = document.getElementById('step-instruction');
     const textDisplay = document.getElementById('text-display');
     const stimulus = document.getElementById('stimulus');
     const buttonContainer = document.getElementById('button-container');
 
-    // フォームのバリデーションと実験開始
-    function validateAndStart() {
+    // スマホかPCかの自動判定
+    if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+        userDevice = "Smartphone";
+        document.getElementById('pc-instruction').style.display = 'none';
+    }
+
+    // 属性入力から説明ページへ
+    function goToInstruction() {
         userGender = document.getElementById('gender').value;
         userAge = document.getElementById('age').value;
-
         if (!userGender || !userAge) {
             alert("性別と年齢を正しく入力してください。");
             return;
         }
-
-        profileForm.style.display = 'none';
-        initExperiment();
-        nextTrial();
+        stepProfile.style.display = 'none';
+        stepInstruction.style.display = 'flex';
     }
 
+    // 実験リスト初期化
     function initExperiment() {
         let conditionTimes = [];
         for (let t = minTime; t <= maxTime; t = parseFloat((t + step).toFixed(1))) {
@@ -160,12 +224,21 @@
         }
     }
 
+    // 実験スタート
+    function startExperiment() {
+        stepInstruction.style.display = 'none';
+        initExperiment();
+        nextTrial();
+    }
+
+    // 次の試行
     function nextTrial() {
         if (currentTrialIndex >= trials.length) {
             sendDataToGAS();
             return;
         }
 
+        isWaitingForResponse = false;
         textDisplay.style.display = 'block';
         buttonContainer.style.display = 'none';
         stimulus.style.display = 'none';
@@ -190,10 +263,14 @@
         setTimeout(() => {
             stimulus.style.display = 'none';
             buttonContainer.style.display = 'flex';
+            isWaitingForResponse = true; // 回答を受け付け開始
         }, durationSeconds * 1000);
     }
 
     function recordResponse(response) {
+        if (!isWaitingForResponse) return;
+        isWaitingForResponse = false; // 二重入力を防止
+
         const targetDuration = trials[currentTrialIndex];
         let isCorrect = 0;
         if (targetDuration < 3.0 && response === 'short') isCorrect = 1;
@@ -211,34 +288,45 @@
         nextTrial();
     }
 
-    // GASへデータを非同期送信
+    // キーボード入力の監視 (A: 短い, D: 長い)
+    window.addEventListener('keydown', (event) => {
+        if (!isWaitingForResponse) return;
+        
+        if (event.key === 'a' || event.key === 'A') {
+            recordResponse('short');
+        } else if (event.key === 'd' || event.key === 'D') {
+            recordResponse('long');
+        }
+    });
+
+    // GASへデータを送信
     function sendDataToGAS() {
         textDisplay.style.display = 'block';
         buttonContainer.style.display = 'none';
-        textDisplay.innerHTML = "実験終了です。<br>データを送信しています。画面を閉じずに少々お待ちください...";
+        // 見切れないよう十分な高さを持つ要素の中に長文を配置
+        textDisplay.innerHTML = "すべての試行が終了しました。<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>ただいまデータを送信しています。<br>画面を閉じずにこのまま少々お待ちください...</span>";
 
-        // 送信するデータの塊（ペイロード）を作成
         const payload = {
             gender: userGender,
             age: userAge,
+            device: userDevice,
             results: results
         };
 
-        // fetch APIを使ってGASに非同期でデータを送信
         fetch(gasUrl, {
             method: "POST",
-            mode: "no-cors", // クロスドメイン対策
+            mode: "no-cors",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(payload)
         })
         .then(() => {
-            textDisplay.innerHTML = "データの送信が完了しました！<br>ご協力ありがとうございました。";
+            textDisplay.innerHTML = "データの送信が完了しました！<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>ご協力ありがとうございました。<br>ブラウザのタブを閉じて終了してください。</span>";
         })
         .catch(error => {
             console.error("Error:", error);
-            textDisplay.innerHTML = "データの送信中にエラーが発生しました。<br>お手数ですが管理者に連絡してください。";
+            textDisplay.innerHTML = "送信中にエラーが発生しました。<br><br><span style='font-size:16px; color:red;'>大変お手数ですが、実験管理者に連絡してください。</span>";
         });
     }
 </script>
