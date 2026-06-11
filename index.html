@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>時間長知覚 予備実験1 (オンライン版)</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f7;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        #screen {
+            width: 600px;
+            height: 400px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #stimulus {
+            width: 120px;
+            height: 120px;
+            background-color: #000000;
+            border-radius: 50%;
+            display: none;
+        }
+        #text-display {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.5;
+        }
+        #button-container {
+            display: none;
+            gap: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background-color: #0071e3;
+            color: white;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #005bb5;
+        }
+        /* フォームのスタイル */
+        .form-group {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-group label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .form-group select, .form-group input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="screen">
+    <div id="profile-form" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+        <h2>実験を始める前に</h2>
+        <div class="form-group">
+            <label for="gender">性別</label>
+            <select id="gender" required>
+                <option value="">選択してください</option>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+                <option value="other">その他・答えたくない</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="age">年齢</label>
+            <input type="number" id="age" min="0" max="120" placeholder="半角数字で入力" required>
+        </div>
+        <button id="start-btn" onclick="validateAndStart()">実験を開始する</button>
+    </div>
+    
+    <div id="text-display" style="display: none;"></div>
+    <div id="stimulus"></div>
+    <div id="button-container">
+        <button onclick="recordResponse('short')">3秒より短かった</button>
+        <button onclick="recordResponse('long')">3秒より長かった</button>
+    </div>
+</div>
+
+<script>
+    // ★ここに取得したGASのウェブアプリURLを貼り付けてください
+    const gasUrl = "https://script.google.com/macros/s/AKfycbz9DtUBJfplWZ0Dfrv5oHQyihkOadEinSKWukcGmyjhxN8_Rn_3vhSjTcHxW0umLgOTZw/exec";
+
+    const minTime = 2.0;
+    const maxTime = 4.0;
+    const step = 0.1;
+    const trialsPerCondition = 3;
+
+    let trials = [];
+    let currentTrialIndex = 0;
+    let results = [];
+    let userGender = "";
+    let userAge = "";
+
+    const profileForm = document.getElementById('profile-form');
+    const textDisplay = document.getElementById('text-display');
+    const stimulus = document.getElementById('stimulus');
+    const buttonContainer = document.getElementById('button-container');
+
+    // フォームのバリデーションと実験開始
+    function validateAndStart() {
+        userGender = document.getElementById('gender').value;
+        userAge = document.getElementById('age').value;
+
+        if (!userGender || !userAge) {
+            alert("性別と年齢を正しく入力してください。");
+            return;
+        }
+
+        profileForm.style.display = 'none';
+        initExperiment();
+        nextTrial();
+    }
+
+    function initExperiment() {
+        let conditionTimes = [];
+        for (let t = minTime; t <= maxTime; t = parseFloat((t + step).toFixed(1))) {
+            conditionTimes.push(t);
+        }
+        for (let i = 0; i < trialsPerCondition; i++) {
+            trials = trials.concat(conditionTimes);
+        }
+        for (let i = trials.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [trials[i], trials[j]] = [trials[j], trials[i]];
+        }
+    }
+
+    function nextTrial() {
+        if (currentTrialIndex >= trials.length) {
+            sendDataToGAS();
+            return;
+        }
+
+        textDisplay.style.display = 'block';
+        buttonContainer.style.display = 'none';
+        stimulus.style.display = 'none';
+
+        let countdown = 3;
+        textDisplay.textContent = countdown;
+        
+        let countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                textDisplay.textContent = countdown;
+            } else {
+                clearInterval(countdownInterval);
+                textDisplay.style.display = 'none';
+                showStimulus(trials[currentTrialIndex]);
+            }
+        }, 1000);
+    }
+
+    function showStimulus(durationSeconds) {
+        stimulus.style.display = 'block';
+        setTimeout(() => {
+            stimulus.style.display = 'none';
+            buttonContainer.style.display = 'flex';
+        }, durationSeconds * 1000);
+    }
+
+    function recordResponse(response) {
+        const targetDuration = trials[currentTrialIndex];
+        let isCorrect = 0;
+        if (targetDuration < 3.0 && response === 'short') isCorrect = 1;
+        if (targetDuration > 3.0 && response === 'long') isCorrect = 1;
+        if (targetDuration === 3.0) isCorrect = -1;
+
+        results.push({
+            trial: currentTrialIndex + 1,
+            duration: targetDuration,
+            response: response,
+            isCorrect: isCorrect
+        });
+
+        currentTrialIndex++;
+        nextTrial();
+    }
+
+    // GASへデータを非同期送信
+    function sendDataToGAS() {
+        textDisplay.style.display = 'block';
+        buttonContainer.style.display = 'none';
+        textDisplay.innerHTML = "実験終了です。<br>データを送信しています。画面を閉じずに少々お待ちください...";
+
+        // 送信するデータの塊（ペイロード）を作成
+        const payload = {
+            gender: userGender,
+            age: userAge,
+            results: results
+        };
+
+        // fetch APIを使ってGASに非同期でデータを送信
+        fetch(gasUrl, {
+            method: "POST",
+            mode: "no-cors", // クロスドメイン対策
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            textDisplay.innerHTML = "データの送信が完了しました！<br>ご協力ありがとうございました。";
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            textDisplay.innerHTML = "データの送信中にエラーが発生しました。<br>お手数ですが管理者に連絡してください。";
+        });
+    }
+</script>
+
+</body>
+</html>
