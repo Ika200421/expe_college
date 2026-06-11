@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【動作確認用】時間長知覚 予備実験1</title>
+    <title>時間長知覚 予備実験1</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -32,6 +32,7 @@
             box-sizing: border-box;
             position: relative;
         }
+        /* 刺激（黒い円） */
         #stimulus {
             width: 140px;
             height: 140px;
@@ -39,6 +40,7 @@
             border-radius: 50%;
             display: none;
         }
+        /* テキスト・案内文表示 */
         .text-container {
             font-size: 18px;
             line-height: 1.7;
@@ -53,6 +55,7 @@
             width: 100%;
             word-break: break-all;
         }
+        /* ボタン・コンテナ */
         .btn-container {
             display: flex;
             gap: 16px;
@@ -78,6 +81,7 @@
         button:active {
             transform: scale(0.98);
         }
+        /* フォームのスタイル */
         .form-group {
             margin-bottom: 20px;
             width: 100%;
@@ -98,6 +102,7 @@
             width: 100%;
             box-sizing: border-box;
         }
+        /* キーボード案内の薄い文字 */
         .key-hint {
             display: block;
             font-size: 12px;
@@ -109,7 +114,7 @@
             #screen { padding: 20px; min-height: 400px; }
             .btn-container { flex-direction: column; width: 100%; }
             button { width: 100%; }
-            .key-hint { display: none; }
+            .key-hint { display: none; } /* スマホではキー案内を隠す */
         }
     </style>
 </head>
@@ -117,29 +122,36 @@
 
 <div id="screen">
     <div id="step-profile" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-        <h2 style="margin-top:0;">【テスト用】実験前に</h2>
+        <h2 style="margin-top:0;">実験を始める前に</h2>
         <div class="form-group">
             <label for="gender">性別</label>
             <select id="gender" required>
                 <option value="">選択してください</option>
-                <option value="test_male">テスト男性</option>
-                <option value="test_female">テスト女性</option>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+                <option value="other">その他・答えたくない</option>
             </select>
         </div>
         <div class="form-group">
             <label for="age">年齢</label>
-            <input type="number" id="age" value="99" required>
+            <input type="number" id="age" min="0" max="120" placeholder="半角数字で入力" required>
         </div>
         <button onclick="goToInstruction()">次へ進む</button>
     </div>
 
     <div id="step-instruction" style="display: none; flex-direction: column; align-items: center; width: 100%;">
-        <h2 style="margin-top:0;">動作テストの説明</h2>
+        <h2 style="margin-top:0;">実験の説明</h2>
         <div class="text-container">
-            <p style="color: red; font-weight: bold; text-align: center;">※これは1回のみで終了する動作確認用ページです。</p>
-            <p>「実験を開始する」を押すと、3秒カウント後に1回だけ円が表示されます。回答後、スプレッドシートにデータが飛ぶか確認してください。</p>
+            <p>この実験では、画面に表示される「黒い円」の提示時間が、<strong>基準となる3秒間よりも【長い】か【短い】か</strong>を判定していただきます。</p>
+            <p><strong>【手順】</strong><br>
+            1. 「実験を開始する」を押すと、3秒のカウントダウンが始まります。<br>
+            2. カウントの後に、画面に黒い円が数秒間表示されます。<br>
+            3. 円が消えたら、3秒より長かったか短かったかを選択してください。</p>
+            <p id="pc-instruction" style="background:#f5f5f7; padding:12px; border-radius:8px; font-size:15px; font-weight:bold;">
+                💻 PCでご参加の方：<br>画面のボタンをクリックするか、キーボードの <span style="color:#0071e3;">[A]（短かった）</span> または <span style="color:#0071e3;">[D]（長かった）</span> を押しても回答できます。
+            </p>
         </div>
-        <button onclick="startExperiment()">理解しました（テスト開始）</button>
+        <button onclick="startExperiment()">理解しました（実験を開始）</button>
     </div>
     
     <div id="text-display" style="display: none;"></div>
@@ -160,14 +172,18 @@
     // ★ここに取得したGASのウェブアプリURLを貼り付けてください
     const gasUrl = "https://script.google.com/macros/s/AKfycbyTIrbxph6N13uT9-vYk5_xHZ8BPc0lSUh_Wg_hG1YAsQ7u2kz7-aYDGZhsMjYc7AQNaw/exec";
 
-    // テスト用に1回（3.0秒）だけの配列にする
-    let trials = [3.0]; 
+    const minTime = 2.0;
+    const maxTime = 4.0;
+    const step = 0.1;
+    const trialsPerCondition = 3;
+
+    let trials = [];
     let currentTrialIndex = 0;
     let results = [];
     let userGender = "";
     let userAge = "";
     let userDevice = "PC";
-    let isWaitingForResponse = false;
+    let isWaitingForResponse = false; // 回答待ちフラグ（キー連打対策）
 
     const stepProfile = document.getElementById('step-profile');
     const stepInstruction = document.getElementById('step-instruction');
@@ -175,26 +191,47 @@
     const stimulus = document.getElementById('stimulus');
     const buttonContainer = document.getElementById('button-container');
 
+    // スマホかPCかの自動判定
     if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
         userDevice = "Smartphone";
+        document.getElementById('pc-instruction').style.display = 'none';
     }
 
+    // 属性入力から説明ページへ
     function goToInstruction() {
         userGender = document.getElementById('gender').value;
         userAge = document.getElementById('age').value;
         if (!userGender || !userAge) {
-            alert("性別と年齢を入力してください。");
+            alert("性別と年齢を正しく入力してください。");
             return;
         }
         stepProfile.style.display = 'none';
         stepInstruction.style.display = 'flex';
     }
 
+    // 実験リスト初期化
+    function initExperiment() {
+        let conditionTimes = [];
+        for (let t = minTime; t <= maxTime; t = parseFloat((t + step).toFixed(1))) {
+            conditionTimes.push(t);
+        }
+        for (let i = 0; i < trialsPerCondition; i++) {
+            trials = trials.concat(conditionTimes);
+        }
+        for (let i = trials.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [trials[i], trials[j]] = [trials[j], trials[i]];
+        }
+    }
+
+    // 実験スタート
     function startExperiment() {
         stepInstruction.style.display = 'none';
+        initExperiment();
         nextTrial();
     }
 
+    // 次の試行
     function nextTrial() {
         if (currentTrialIndex >= trials.length) {
             sendDataToGAS();
@@ -226,16 +263,19 @@
         setTimeout(() => {
             stimulus.style.display = 'none';
             buttonContainer.style.display = 'flex';
-            isWaitingForResponse = true;
+            isWaitingForResponse = true; // 回答を受け付け開始
         }, durationSeconds * 1000);
     }
 
     function recordResponse(response) {
         if (!isWaitingForResponse) return;
-        isWaitingForResponse = false;
+        isWaitingForResponse = false; // 二重入力を防止
 
         const targetDuration = trials[currentTrialIndex];
-        let isCorrect = -1; // 3.0秒ちょうどなので基準値の-1
+        let isCorrect = 0;
+        if (targetDuration < 3.0 && response === 'short') isCorrect = 1;
+        if (targetDuration > 3.0 && response === 'long') isCorrect = 1;
+        if (targetDuration === 3.0) isCorrect = -1;
 
         results.push({
             trial: currentTrialIndex + 1,
@@ -248,8 +288,10 @@
         nextTrial();
     }
 
+    // キーボード入力の監視 (A: 短い, D: 長い)
     window.addEventListener('keydown', (event) => {
         if (!isWaitingForResponse) return;
+        
         if (event.key === 'a' || event.key === 'A') {
             recordResponse('short');
         } else if (event.key === 'd' || event.key === 'D') {
@@ -257,10 +299,12 @@
         }
     });
 
+    // GASへデータを送信
     function sendDataToGAS() {
         textDisplay.style.display = 'block';
         buttonContainer.style.display = 'none';
-        textDisplay.innerHTML = "テスト送信中...<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>画面を閉じずに少々お待ちください...</span>";
+        // 見切れないよう十分な高さを持つ要素の中に長文を配置
+        textDisplay.innerHTML = "すべての試行が終了しました。<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>ただいまデータを送信しています。<br>画面を閉じずにこのまま少々お待ちください...</span>";
 
         const payload = {
             gender: userGender,
@@ -278,11 +322,11 @@
             body: JSON.stringify(payload)
         })
         .then(() => {
-            textDisplay.innerHTML = "テストデータの送信完了！<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>Googleスプレッドシートを開いて、データが1行追加されているか確認してください。</span>";
+            textDisplay.innerHTML = "データの送信が完了しました！<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>ご協力ありがとうございました。<br>ブラウザのタブを閉じて終了してください。</span>";
         })
         .catch(error => {
             console.error("Error:", error);
-            textDisplay.innerHTML = "送信エラーが発生しました。";
+            textDisplay.innerHTML = "送信中にエラーが発生しました。<br><br><span style='font-size:16px; color:red;'>大変お手数ですが、実験管理者に連絡してください。</span>";
         });
     }
 </script>
