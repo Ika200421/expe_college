@@ -3,126 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>時間長知覚 予備実験1</title>
+    <title>時間長知覚 予備実験2（映像選定）</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #f5f5f7;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
             color: #333;
-            padding: 20px;
-            box-sizing: border-box;
         }
         #screen {
-            width: 100%;
-            max-width: 640px;
-            min-height: 450px;
+            width: 760px;
+            min-height: 520px;
             background-color: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 30px;
-            box-sizing: border-box;
             position: relative;
+            padding: 24px;
+            box-sizing: border-box;
         }
-        /* 刺激（黒い円） */
-        #stimulus {
-            width: 140px;
-            height: 140px;
-            background-color: #000000;
-            border-radius: 50%;
+        #stimulus-video {
+            width: 700px;
+            height: 394px;
+            background-color: #000;
             display: none;
-        }
-        /* テキスト・案内文表示 */
-        .text-container {
-            font-size: 18px;
-            line-height: 1.7;
-            text-align: left;
-            width: 100%;
-            margin-bottom: 20px;
+            object-fit: contain;
+            border-radius: 8px;
         }
         #text-display {
             font-size: 24px;
             font-weight: bold;
             text-align: center;
-            width: 100%;
-            word-break: break-all;
+            line-height: 1.6;
         }
-        /* ボタン・コンテナ */
-        .btn-container {
-            display: flex;
-            gap: 16px;
-            width: 100%;
-            justify-content: center;
+        #button-container {
+            display: none;
+            gap: 20px;
             flex-wrap: wrap;
-            margin-top: 20px;
+            justify-content: center;
         }
         button {
-            padding: 14px 28px;
-            font-size: 16px;
+            padding: 12px 24px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             background-color: #0071e3;
             color: white;
-            transition: background 0.2s, transform 0.1s;
+            transition: background 0.2s;
         }
-        button:hover {
-            background-color: #005bb5;
-        }
-        button:active {
-            transform: scale(0.98);
-        }
-        /* フォームのスタイル */
+        button:hover { background-color: #005bb5; }
+        button:disabled { background-color: #999; cursor: not-allowed; }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             width: 100%;
             max-width: 320px;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
-        .form-group label {
-            font-size: 15px;
-            font-weight: bold;
-        }
+        .form-group label { font-size: 16px; font-weight: bold; }
         .form-group select, .form-group input {
-            padding: 12px;
+            padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
-            border-radius: 8px;
-            width: 100%;
-            box-sizing: border-box;
+            border-radius: 6px;
         }
-        /* キーボード案内の薄い文字 */
-        .key-hint {
-            display: block;
-            font-size: 12px;
-            font-weight: normal;
-            color: #eaeaea;
-            margin-top: 4px;
-        }
-        @media (max-width: 480px) {
-            #screen { padding: 20px; min-height: 400px; }
-            .btn-container { flex-direction: column; width: 100%; }
-            button { width: 100%; }
-            .key-hint { display: none; } /* スマホではキー案内を隠す */
+        .small-note {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            max-width: 560px;
+            text-align: left;
+            margin-bottom: 18px;
         }
     </style>
 </head>
 <body>
 
 <div id="screen">
-    <div id="step-profile" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-        <h2 style="margin-top:0;">実験を始める前に</h2>
+    <div id="profile-form" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+        <h2>時間長知覚 予備実験2</h2>
+        <p class="small-note">
+            3カウント後に映像が短時間再生されます。<br>
+            映像の再生時間が「3秒より短かった」か「3秒より長かった」かを直感で回答してください。<br>
+            ※この実験では動画の音声は自動的に無音になります。
+        </p>
         <div class="form-group">
             <label for="gender">性別</label>
             <select id="gender" required>
@@ -136,197 +111,217 @@
             <label for="age">年齢</label>
             <input type="number" id="age" min="0" max="120" placeholder="半角数字で入力" required>
         </div>
-        <button onclick="goToInstruction()">次へ進む</button>
+        <button id="start-btn" onclick="validateAndStart()">実験を開始する</button>
     </div>
 
-    <div id="step-instruction" style="display: none; flex-direction: column; align-items: center; width: 100%;">
-        <h2 style="margin-top:0;">実験の説明</h2>
-        <div class="text-container">
-            <p>この実験では、画面に表示される「黒い円」の提示時間が、<strong>基準となる3秒間よりも【長い】か【短い】か</strong>を判定していただきます。</p>
-            <p><strong>【手順】</strong><br>
-            1. 「実験を開始する」を押すと、3秒のカウントダウンが始まります。<br>
-            2. カウントの後に、画面に黒い円が数秒間表示されます。<br>
-            3. 円が消えたら、3秒より長かったか短かったかを選択してください。</p>
-            <p id="pc-instruction" style="background:#f5f5f7; padding:12px; border-radius:8px; font-size:15px; font-weight:bold;">
-                💻 PCでご参加の方：<br>画面のボタンをクリックするか、キーボードの <span style="color:#0071e3;">[A]（短かった）</span> または <span style="color:#0071e3;">[D]（長かった）</span> を押しても回答できます。
-            </p>
-        </div>
-        <button onclick="startExperiment()">理解しました（実験を開始）</button>
-    </div>
-    
     <div id="text-display" style="display: none;"></div>
-    <div id="stimulus"></div>
-    <div id="button-container" class="btn-container" style="display: none;">
-        <button id="btn-short" onclick="recordResponse('short')">
-            3秒より短かった
-            <span class="key-hint">[A] キー</span>
-        </button>
-        <button id="btn-long" onclick="recordResponse('long')">
-            3秒より長かった
-            <span class="key-hint">[D] キー</span>
-        </button>
+    <video id="stimulus-video" playsinline preload="auto" muted></video>
+    <div id="button-container">
+        <button onclick="recordResponse('short')">3秒より短かった</button>
+        <button onclick="recordResponse('long')">3秒より長かった</button>
     </div>
 </div>
 
 <script>
     // ★ここに取得したGASのウェブアプリURLを貼り付けてください
-    const gasUrl = "https://script.google.com/macros/s/AKfycbyTIrbxph6N13uT9-vYk5_xHZ8BPc0lSUh_Wg_hG1YAsQ7u2kz7-aYDGZhsMjYc7AQNaw/exec";
+    const gasUrl = "https://script.google.com/macros/s/AKfycbyUI3KYjzrs1aOhDCSAs62pcVr5_BcDCavOWcKiEBl9-r2Uqa2MqXKrPt-B44CzXDxWvw/exec";
 
-    const minTime = 2.0;
-    const maxTime = 4.0;
+    // ===== 実験設定 =====
+    // 予備実験1の結果をもとに、2.6秒〜3.3秒を0.1秒刻みにする
+    const minTime = 2.6;
+    const maxTime = 3.3;
     const step = 0.1;
-    const trialsPerCondition = 3;
+
+    // 同じ「映像×秒数」を何回ずつ出すか
+    // 多すぎる場合は 1 に変更してください
+    const trialsPerCondition = 1;
+
+    // 使用する動画ファイル名をここに追加してください。
+    // このHTMLファイルと同じフォルダに動画を置く場合は、例のようにファイル名だけでOKです。
+    const videoFiles = [
+        { id: "city", label: "都会の動画", src: "videos/city.mp4", condition: "city" },
+        { id: "koi", label: "鯉の動画", src: "videos/koi.mp4", condition: "koi" },
+        { id: "park", label: "公園の動画", src: "videos/park.mp4", condition: "park" },
+        { id: "people", label: "人の動画", src: "videos/people.mp4", condition: "people" }
+    ];
 
     let trials = [];
     let currentTrialIndex = 0;
     let results = [];
     let userGender = "";
     let userAge = "";
-    let userDevice = "PC";
-    let isWaitingForResponse = false; // 回答待ちフラグ（キー連打対策）
+    let trialStartTime = 0;
+    let responseStartTime = 0;
 
-    const stepProfile = document.getElementById('step-profile');
-    const stepInstruction = document.getElementById('step-instruction');
+    const profileForm = document.getElementById('profile-form');
     const textDisplay = document.getElementById('text-display');
-    const stimulus = document.getElementById('stimulus');
+    const video = document.getElementById('stimulus-video');
     const buttonContainer = document.getElementById('button-container');
+    const startBtn = document.getElementById('start-btn');
 
-    // スマホかPCかの自動判定
-    if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-        userDevice = "Smartphone";
-        document.getElementById('pc-instruction').style.display = 'none';
-    }
-
-    // 属性入力から説明ページへ
-    function goToInstruction() {
+    function validateAndStart() {
         userGender = document.getElementById('gender').value;
         userAge = document.getElementById('age').value;
+
         if (!userGender || !userAge) {
             alert("性別と年齢を正しく入力してください。");
             return;
         }
-        stepProfile.style.display = 'none';
-        stepInstruction.style.display = 'flex';
-    }
+        if (videoFiles.length === 0) {
+            alert("videoFiles に使用する動画を1つ以上設定してください。");
+            return;
+        }
 
-    // 実験リスト初期化
-    function initExperiment() {
-        let conditionTimes = [];
-        for (let t = minTime; t <= maxTime; t = parseFloat((t + step).toFixed(1))) {
-            conditionTimes.push(t);
-        }
-        for (let i = 0; i < trialsPerCondition; i++) {
-            trials = trials.concat(conditionTimes);
-        }
-        for (let i = trials.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [trials[i], trials[j]] = [trials[j], trials[i]];
-        }
-    }
-
-    // 実験スタート
-    function startExperiment() {
-        stepInstruction.style.display = 'none';
+        startBtn.disabled = true;
+        profileForm.style.display = 'none';
         initExperiment();
         nextTrial();
     }
 
-    // 次の試行
+    function initExperiment() {
+        const conditionTimes = [];
+        for (let t = minTime; t <= maxTime + 0.0001; t = parseFloat((t + step).toFixed(1))) {
+            conditionTimes.push(t);
+        }
+
+        for (let repeat = 0; repeat < trialsPerCondition; repeat++) {
+            for (const vf of videoFiles) {
+                for (const duration of conditionTimes) {
+                    trials.push({
+                        videoId: vf.id,
+                        videoLabel: vf.label,
+                        videoSrc: vf.src,
+                        videoCondition: vf.condition,
+                        duration: duration,
+                        repeat: repeat + 1
+                    });
+                }
+            }
+        }
+
+        shuffle(trials);
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
     function nextTrial() {
         if (currentTrialIndex >= trials.length) {
             sendDataToGAS();
             return;
         }
 
-        isWaitingForResponse = false;
         textDisplay.style.display = 'block';
         buttonContainer.style.display = 'none';
-        stimulus.style.display = 'none';
+        video.style.display = 'none';
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
 
+        const total = trials.length;
+        const current = currentTrialIndex + 1;
         let countdown = 3;
-        textDisplay.textContent = countdown;
-        
-        let countdownInterval = setInterval(() => {
+        textDisplay.innerHTML = `試行 ${current} / ${total}<br><br>${countdown}`;
+
+        const countdownInterval = setInterval(() => {
             countdown--;
             if (countdown > 0) {
-                textDisplay.textContent = countdown;
+                textDisplay.innerHTML = `試行 ${current} / ${total}<br><br>${countdown}`;
             } else {
                 clearInterval(countdownInterval);
                 textDisplay.style.display = 'none';
-                showStimulus(trials[currentTrialIndex]);
+                showVideo(trials[currentTrialIndex]);
             }
         }, 1000);
     }
 
-    function showStimulus(durationSeconds) {
-        stimulus.style.display = 'block';
+    async function showVideo(trial) {
+        trialStartTime = performance.now();
+        video.src = trial.videoSrc;
+        video.muted = true;
+        video.volume = 0;
+        video.currentTime = 0;
+        video.style.display = 'block';
+
+        try {
+            await video.play();
+        } catch (error) {
+            console.error(error);
+            video.style.display = 'none';
+            textDisplay.style.display = 'block';
+            textDisplay.innerHTML = "動画を再生できませんでした。<br>動画ファイル名や保存場所を確認してください。";
+            return;
+        }
+
         setTimeout(() => {
-            stimulus.style.display = 'none';
+            video.pause();
+            video.style.display = 'none';
+            responseStartTime = performance.now();
             buttonContainer.style.display = 'flex';
-            isWaitingForResponse = true; // 回答を受け付け開始
-        }, durationSeconds * 1000);
+        }, trial.duration * 1000);
     }
 
     function recordResponse(response) {
-        if (!isWaitingForResponse) return;
-        isWaitingForResponse = false; // 二重入力を防止
-
-        const targetDuration = trials[currentTrialIndex];
+        const trial = trials[currentTrialIndex];
         let isCorrect = 0;
-        if (targetDuration < 3.0 && response === 'short') isCorrect = 1;
-        if (targetDuration > 3.0 && response === 'long') isCorrect = 1;
-        if (targetDuration === 3.0) isCorrect = -1;
+        if (trial.duration < 3.0 && response === 'short') isCorrect = 1;
+        if (trial.duration > 3.0 && response === 'long') isCorrect = 1;
+        if (trial.duration === 3.0) isCorrect = -1; // 3.0秒は長短の正解を決めない
+
+        const responseTimeMs = Math.round(performance.now() - responseStartTime);
+        const actualPlayedMs = Math.round(responseStartTime - trialStartTime);
 
         results.push({
             trial: currentTrialIndex + 1,
-            duration: targetDuration,
+            videoId: trial.videoId,
+            videoLabel: trial.videoLabel,
+            videoSrc: trial.videoSrc,
+            videoCondition: trial.videoCondition,
+            duration: trial.duration,
+            repeat: trial.repeat,
             response: response,
-            isCorrect: isCorrect
+            isCorrect: isCorrect,
+            responseTimeMs: responseTimeMs,
+            actualPlayedMs: actualPlayedMs
         });
 
         currentTrialIndex++;
         nextTrial();
     }
 
-    // キーボード入力の監視 (A: 短い, D: 長い)
-    window.addEventListener('keydown', (event) => {
-        if (!isWaitingForResponse) return;
-        
-        if (event.key === 'a' || event.key === 'A') {
-            recordResponse('short');
-        } else if (event.key === 'd' || event.key === 'D') {
-            recordResponse('long');
-        }
-    });
-
-    // GASへデータを送信
     function sendDataToGAS() {
         textDisplay.style.display = 'block';
         buttonContainer.style.display = 'none';
-        // 見切れないよう十分な高さを持つ要素の中に長文を配置
-        textDisplay.innerHTML = "すべての試行が終了しました。<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>ただいまデータを送信しています。<br>画面を閉じずにこのまま少々お待ちください...</span>";
+        video.style.display = 'none';
+        textDisplay.innerHTML = "実験終了です。<br>データを送信しています。画面を閉じずにお待ちください...";
 
         const payload = {
+            experimentName: "pre_experiment_2_video_selection",
             gender: userGender,
             age: userAge,
-            device: userDevice,
+            minTime: minTime,
+            maxTime: maxTime,
+            step: step,
+            trialsPerCondition: trialsPerCondition,
             results: results
         };
 
         fetch(gasUrl, {
             method: "POST",
             mode: "no-cors",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         })
         .then(() => {
-            textDisplay.innerHTML = "データの送信が完了しました！<br><br><span style='font-size:16px; font-weight:normal; color:#666;'>ご協力ありがとうございました。<br>ブラウザのタブを閉じて終了してください。</span>";
+            textDisplay.innerHTML = "データの送信が完了しました！<br>ご協力ありがとうございました。";
         })
         .catch(error => {
             console.error("Error:", error);
-            textDisplay.innerHTML = "送信中にエラーが発生しました。<br><br><span style='font-size:16px; color:red;'>大変お手数ですが、実験管理者に連絡してください。</span>";
+            textDisplay.innerHTML = "データの送信中にエラーが発生しました。<br>お手数ですが管理者に連絡してください。";
         });
     }
 </script>
